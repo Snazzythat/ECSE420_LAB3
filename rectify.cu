@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include "omp.h"
 #include <math.h>
+#include "gputimer.h"
 
 //Rectify worker function
 __global__ void rectify(unsigned char * cud_input, unsigned char * cud_output){
@@ -70,11 +71,17 @@ void rectification_handler(char* input_filename, char* output_filename)
     dim3 dimGrid(input_image_height, 1, 1);
     
     //Kernel begin
+    GpuTimer timer;
+    timer.Start();
     rectify<<<dimGrid, dimBlock>>>(cud_input, cud_output);
     
     //Wait till done, get the processed imaeg array back
     cudaMemcpy(output_image, cud_output, output_image_size, cudaMemcpyDeviceToHost);
     
+    timer.Stop();
+    float run_time = timer.Elapsed();
+    printf("\n Rectification took: %f\n", run_time);
+
     //Load back to PNG
     lodepng_encode32_file(output_filename, output_image, input_image_width, input_image_height);
     

@@ -1,6 +1,7 @@
 #include "lodepng.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include "gputimer.h"
 
 #define DIV 4
 
@@ -86,11 +87,17 @@ void pool_handler(char* input_file, char* output_file)
     dim3 dimBlock(blck_dim , 1, 1);
     
     // Kernel
+    GpuTimer timer;
+    timer.Start();
     pool<<<dimGrid, dimBlock>>>(cud_output, cud_input);
     
     // Get back the filtered data to the output array
     cudaMemcpy(output_image, cud_output, filtered_img_size, cudaMemcpyDeviceToHost);
     
+    timer.Stop();
+    float run_time = timer.Elapsed();
+    printf("\n Pool took: %f\n", run_time);
+
     // Write back to PNG
     lodepng_encode32_file(output_file, output_image, blck_dim, grid_dim);
     
